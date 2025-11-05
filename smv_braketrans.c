@@ -29,7 +29,7 @@ static void BRAKE_QuickSetup(BrakeTransTypeDef *bt, int hardware, ADC_HandleType
 	}
 
 	/* Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. */
-	bt->sConfig.Channel = ADC_CHANNEL_5;
+	bt->sConfig.Channel = ADC_CHANNEL_0;
 	bt->sConfig.Rank = 1;
 	bt->sConfig.SamplingTime = ADC_SAMPLETIME_84CYCLES;
 	if (HAL_ADC_ConfigChannel(bt->hadc, &(bt->sConfig)) != HAL_OK)
