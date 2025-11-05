@@ -9,6 +9,9 @@ CAN_HandleTypeDef hcan1;
 CANBUS can1;
 double send_num = 0;
 
+ADC_HandleTypeDef hadc1;
+BrakeTransTypeDef bt1;
+
 int main(void)
 {
 
@@ -22,10 +25,14 @@ int main(void)
   can1.addFilterDeviceData(&can1, UI, Horn);
   can1.begin(&can1);
 
+  bt1 = BRAKE_new();
+  bt1.init(&bt1, HS1, &hadc1);
+  bt1.begin(&bt1);
+
   while (1)
   {
-
-	  can1.send(&can1, send_num, Pressure);
+    bt1.collect(&bt1);
+    can1.send(&can1, bt1.psi_value, bt1.data_type); // Sends data through can using psi values read from adc
 	  send_num+=0.01;
 	  /*NOTE:
 	   * LED toggle with callback is disabled to accommodate higher frequency
