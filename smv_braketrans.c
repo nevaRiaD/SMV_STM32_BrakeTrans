@@ -1,16 +1,25 @@
-#include "smv_braketrans.h"
-#include <string.h>
+#include "../Inc/smv_braketrans.h"
+#include "../Inc/smv_board_enums.h"
 
-static void ADCtoPSI(BrakeTransTypeDef *bt); // private helper
+static void ADCtoPSI(BrakeTrans *bt); // private helper
 
-static void BRAKE_QuickSetup(BrakeTransTypeDef *bt, int hardware, ADC_HandleTypeDef *adc_obj) {
-	bt->hadc = adc_obj;
+static void BRAKE_QuickSetup(BrakeTrans *bt, int hardware, ADC_HandleTypeDef *adc_obj)
+{
 	bt->device_id = hardware;
-	bt->data_type = 6; // HSMessage::Pressure
+	bt->data_type = Pressure;
 	bt->psi_value = 0;
 	bt->fault_flag = 0;
+
+	bt->hadc = adc_obj;
+	ADC_Init(&adc_obj);
 	memset(&(bt->sConfig), 0, sizeof(bt->sConfig));
 
+
+}
+
+static void ADC_Init(BrakeTrans *adc_obj)
+{
+	
 	bt->hadc->Instance = ADC1;
 	bt->hadc->Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
 	bt->hadc->Init.Resolution = ADC_RESOLUTION_12B;
@@ -38,14 +47,15 @@ static void BRAKE_QuickSetup(BrakeTransTypeDef *bt, int hardware, ADC_HandleType
 	}
 }
 
-static void BRAKE_Run(BrakeTransTypeDef *bt) {
+static void BRAKE_Run(BrakeTrans *bt)
+{
 	// Start ADC once for continuous mode
 	if (HAL_ADC_Start(bt->hadc) != HAL_OK) {
 		Error_Handler();
 	}
 }
 
-static void BRAKE_Collect(BrakeTransTypeDef *bt) {
+static void BRAKE_Collect(BrakeTrans *bt) {
 	if (HAL_ADC_PollForConversion(bt->hadc, 0) == HAL_OK)
 	{
 	    bt->adc_raw = (uint16_t)HAL_ADC_GetValue(bt->hadc);
@@ -54,7 +64,7 @@ static void BRAKE_Collect(BrakeTransTypeDef *bt) {
 }
 
 // Helper function to convert adc data -> psi
-static void ADCtoPSI(BrakeTransTypeDef *bt)
+static void ADCtoPSI(BrakeTrans *bt)
 {
 	double v_sensor = ((double)bt->adc_raw * BRAKE_TRANS_VREF * BRAKE_TRANS_DIVIDER) / BRAKE_TRANS_ADC_MAX;
 	double psi = (BRAKE_TRANS_SLOPE * v_sensor) - BRAKE_TRANS_OFFSET;
@@ -65,17 +75,20 @@ static void ADCtoPSI(BrakeTransTypeDef *bt)
 }
 
 // Return psi value
-static double BRAKE_getPSI(BrakeTransTypeDef *bt) {
+static double BRAKE_getPSI(BrakeTrans *bt)
+{
 	return bt->psi_value;
 }
 
 // Return psi value
-static uint16_t BRAKE_getADC(BrakeTransTypeDef *bt) {
+static uint16_t BRAKE_getADC(BrakeTrans *bt)
+{
 	return bt->adc_raw;
 }
 
-BrakeTransTypeDef BRAKE_new(void) {
-	BrakeTransTypeDef bt = {0};
+BrakeTrans BRAKE_new(void) 
+{
+	BrakeTrans bt = {0};
 	bt.init = BRAKE_QuickSetup;
 	bt.begin = BRAKE_Run;
 	bt.collect = BRAKE_Collect;
